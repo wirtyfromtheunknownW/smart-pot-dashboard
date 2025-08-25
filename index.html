@@ -14,17 +14,18 @@
   .val{font-size:2rem;font-weight:bold}
   button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#1f2937;color:#e5e7eb;border:none}
 
-  .gauge-wrapper {
-  display: flex;
-  justify-content: center;   /* center on mobile */
-}
-
-@media (min-width: 768px) {   /* tablets and larger */
-  .gauge-wrapper {
-    justify-content: flex-start; /* align left */
-    margin-left: 50px;           /* nudge right */
+  .gauges {
+    display:flex;
+    gap:2rem;
+    justify-content:center;
+    flex-wrap:wrap; /* stack on small screens */
+    margin:1rem;
   }
-}
+  canvas {
+    background:#111827;
+    border-radius:12px;
+    padding:0.5rem;
+  }
 
 
 
@@ -46,26 +47,27 @@
 </div>
 
 <!-- <canvas id="chart" height="120"></canvas> -->
-<div class="gauge-wrapper">
+<div class="gauges">
 <canvas id="tempGauge"
     data-type="linear-gauge"
     data-width="120"
     data-height="400"
     data-units="°C"
-    colorNeedle = "#94270f"
     colorBar = "#94270f"
+    colorBarStroke = "#94270f"
+    colorBarProgress = "#94270f"
     data-min-value="0"
     data-max-value="50"
     data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
     data-value="0"></canvas>
-</div>
 
-<div class="gauge-wrapper"></div>
 <canvas id="soilGauge"
     data-type="linear-gauge"
     data-width="120"
     data-height="400"
     colorBar = "#2f72c4"
+    colorBarStroke = "#2f72c4"
+    colorBarProgress = "#2f72c4"
     data-units="Soil moisture"
     data-min-value="0"
     data-max-value="4095"
