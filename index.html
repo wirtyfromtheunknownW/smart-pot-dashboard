@@ -65,8 +65,8 @@
     data-width="120"
     data-height="400"
     data-units="Soil moisture"
-    data-min-value="100"
-    data-max-value="0"
+    data-min-value="0"
+    data-max-value="100"
     data-major-ticks=" "
     data-tick-side="none"
     data-number-side="none"
@@ -104,11 +104,11 @@ client.on("message",(t,m)=>{
   const gSoil = document.gauges?.get('soilGauge');
   if (gSoil) {
     let val = 0;
-    if (d.moistureValue === "Very Wet") val = 20;
-    else if (d.moistureValue === "Wet") val = 40;
-    else if (d.moistureValue === "Moist") val = 60;
-    else if (d.moistureValue === "Dry") val = 80;
-    else if (d.moistureValue === "Very Dry") val = 100;
+    if (d.moistureValue === "Very Wet") val = 100;
+    else if (d.moistureValue === "Wet") val = 80;
+    else if (d.moistureValue === "Moist") val = 40;
+    else if (d.moistureValue === "Dry") val = 60;
+    else if (d.moistureValue === "Very Dry") val = 20;
     gSoil.value = val;
   }
 });
