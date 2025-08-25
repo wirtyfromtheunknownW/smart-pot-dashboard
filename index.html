@@ -50,11 +50,31 @@
     data-width="120"
     data-height="400"
     data-units="°C"
+    data-color-plate="#111827"
+    colorNeedle = "#94270f"
     data-min-value="0"
     data-max-value="50"
     data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
     data-value="0"></canvas>
 </div>
+
+<canvas id="soilGauge"
+    data-type="linear-gauge"
+    data-width="120"
+    data-height="400"
+    data-color-plate="#111827"
+    colorNeedle = "#2f72c4"
+    data-units="Soil moisture"
+    data-min-value="0"
+    data-max-value="Wet"
+    data-major-ticks="Very Dry,Dry,Moist,Wet,"
+    data-tick-side="left"
+    data-number-side="left"
+    data-needle-side="left"
+    data-bar-stroke-width="7"
+    data-bar-begin-circle="false"
+    data-value="0"></canvas>
+
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
 
@@ -76,6 +96,7 @@ client.on("message",(t,m)=>{
   let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
   document.gauges.get('tempGauge').value = d.temp_c;
+  document.gauges.get('soilGauge').value = d.moistureValue;
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
