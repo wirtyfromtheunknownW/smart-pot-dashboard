@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Smart Plant Pot</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <style>
   body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
@@ -60,7 +60,9 @@ client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
 
 client.on("message",(t,m)=>{
   let d=JSON.parse(m.toString());
+  document.getElementById("temp").textContent = (d.temp_c ?? "--");
   document.gauges.get('tempGauge').value = d.temp_c;
+  if (g && d.temp_c != null) g.value = d.temp_c;
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
