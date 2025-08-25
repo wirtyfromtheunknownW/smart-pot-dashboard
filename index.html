@@ -26,6 +26,18 @@
   }
 }
 
+ .gauge-soil-wrapper {
+  display: flex;
+  justify-content: center;   /* center on mobile */
+}
+
+@media (min-width: 768px) {   /* tablets and larger */
+  .gauge-soil-wrapper {
+    justify-content: flex-start; /* align left */
+    margin-left: 100px;           /* nudge right */
+  }
+}
+
 </style>
 </head>
 <body>
@@ -58,6 +70,7 @@
     data-value="0"></canvas>
 </div>
 
+<div class="gauge-wrapper"></div>
 <canvas id="soilGauge"
     data-type="linear-gauge"
     data-width="120"
@@ -74,7 +87,7 @@
     data-bar-stroke-width="7"
     data-bar-begin-circle="false"
     data-value="0"></canvas>
-
+<div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
 
