@@ -30,7 +30,7 @@
   <button onclick="pump('OFF')">✖ Water OFF</button>
 </div>
 
-<canvas id="chart" height="120"></canvas>
+<!-- <canvas id="chart" height="120"></canvas> -->
 
 <canvas id="tempGauge"
     data-type="linear-gauge"
@@ -69,10 +69,10 @@ client.on("message",(t,m)=>{
 
 function pump(cmd){ client.publish(TOPIC_PUMP,cmd); }
 
-// Chart.js
-const ctx=document.getElementById("chart");
-const chart=new Chart(ctx,{type:"line",data:{labels:[],datasets:[{label:"Temp °C",data:[],borderColor:"red"}]},options:{scales:{x:{display:false}}}});
-function addPoint(v){if(!v)return;const t=new Date().toLocaleTimeString();chart.data.labels.push(t);chart.data.datasets[0].data.push(v);if(chart.data.labels.length>20){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.update();}
+// // Chart.js
+// const ctx=document.getElementById("chart");
+// const chart=new Chart(ctx,{type:"line",data:{labels:[],datasets:[{label:"Temp °C",data:[],borderColor:"red"}]},options:{scales:{x:{display:false}}}});
+// function addPoint(v){if(!v)return;const t=new Date().toLocaleTimeString();chart.data.labels.push(t);chart.data.datasets[0].data.push(v);if(chart.data.labels.length>20){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.update();}
 </script>
 </body>
 </html>
