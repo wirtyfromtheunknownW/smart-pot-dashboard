@@ -55,9 +55,10 @@
     data-height="400"
     data-units="°C"
     data-min-value="0"
-    data-max-value="50"
-    data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
+    data-max-value="40"
+    data-major-ticks="0,5,10,15,20,25,30,35,40"
     data-value="20"
+    data-value-dec="1"
     data-color-bar-progress="red"
     data-color-bar="rgba(255,255,255,0.2)" ></canvas>
 </div>
@@ -109,8 +110,8 @@ client.on("message",(t,m)=>{
     let val = 0;
     if (d.moistureValue === "Very Wet") val = 100;
     else if (d.moistureValue === "Wet") val = 80;
-    else if (d.moistureValue === "Moist") val = 40;
-    else if (d.moistureValue === "Dry") val = 60;
+    else if (d.moistureValue === "Moist") val = 60;
+    else if (d.moistureValue === "Dry") val = 40;
     else if (d.moistureValue === "Very Dry") val = 20;
     gSoil.value = val;
   }
