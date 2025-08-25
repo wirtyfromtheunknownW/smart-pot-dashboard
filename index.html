@@ -26,17 +26,7 @@
   }
 }
 
- .gauge-soil-wrapper {
-  display: flex;
-  justify-content: center;   /* center on mobile */
-}
 
-@media (min-width: 768px) {   /* tablets and larger */
-  .gauge-soil-wrapper {
-    justify-content: flex-start; /* align left */
-    margin-left: 100px;           /* nudge right */
-  }
-}
 
 </style>
 </head>
@@ -62,8 +52,8 @@
     data-width="120"
     data-height="400"
     data-units="°C"
-    data-color-plate="#111827"
     colorNeedle = "#94270f"
+    colorValueBoxBackground = "#94270f"
     data-min-value="0"
     data-max-value="50"
     data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
@@ -75,12 +65,11 @@
     data-type="linear-gauge"
     data-width="120"
     data-height="400"
-    data-color-plate="#111827"
-    colorNeedle = "#2f72c4"
+    colorValueBoxBackground = "#2f72c4"
     data-units="Soil moisture"
     data-min-value="0"
-    data-max-value="Wet"
-    data-major-ticks="Very Dry,Dry,Moist,Wet,"
+    data-max-value="4095"
+    data-major-ticks="0,1024,2048,3072,4095"
     data-tick-side="left"
     data-number-side="left"
     data-needle-side="left"
