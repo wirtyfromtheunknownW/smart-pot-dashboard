@@ -72,7 +72,7 @@
     data-number-side="none"
     data-color-bar-progress="blue"
     data-color-bar="rgba(56, 210, 224,0.2)"></canvas>
-<div>
+</div>
 
   <p id="soilLabel" style="text-align:center;font-size:1.2rem;font-weight:bold"></p>
 
@@ -96,7 +96,7 @@ client.on("message",(t,m)=>{
   let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
   document.gauges.get('tempGauge').value = d.temp_c;
-  document.gauges.get('soilGauge').textContent = d.moistureValue;
+  document.getElementById("soilLabel").textContent = d.moistureValue ?? "--";
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
