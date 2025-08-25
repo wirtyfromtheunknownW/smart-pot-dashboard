@@ -13,6 +13,19 @@
   .card{background:#111827;padding:1rem;border-radius:12px}
   .val{font-size:2rem;font-weight:bold}
   button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#1f2937;color:#e5e7eb;border:none}
+
+  .gauge-wrapper {
+  display: flex;
+  justify-content: center;   /* center on mobile */
+}
+
+@media (min-width: 768px) {   /* tablets and larger */
+  .gauge-wrapper {
+    justify-content: flex-start; /* align left */
+    margin-left: 50px;           /* nudge right */
+  }
+}
+
 </style>
 </head>
 <body>
@@ -31,7 +44,7 @@
 </div>
 
 <!-- <canvas id="chart" height="120"></canvas> -->
-
+<div class="gauge-wrapper">
 <canvas id="tempGauge"
     data-type="linear-gauge"
     data-width="120"
@@ -41,6 +54,7 @@
     data-max-value="50"
     data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
     data-value="0"></canvas>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
 
