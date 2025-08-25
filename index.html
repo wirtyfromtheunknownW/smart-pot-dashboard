@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Smart Plant Pot</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0}
+  header{padding:1rem;text-align:center;font-weight:700}
+  .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:#111827;padding:1rem;border-radius:12px}
+  .val{font-size:2rem;font-weight:bold}
+  button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#1f2937;color:#e5e7eb;border:none}
+</style>
+</head>
+<body>
+<header>🌱 Smart Plant Pot Dashboard</header>
+
+<div class="grid">
+  <div class="card">Temp: <span id="temp" class="val">--</span> °C</div>
+  <div class="card">Hum: <span id="hum" class="val">--</span> %</div>
+  <div class="card">Soil: <span id="soil" class="val">--</span></div>
+  <div class="card">Light: <span id="light" class="val">--</span></div>
+</div>
+
+<div style="text-align:center;margin:1rem">
+  <button onclick="pump('ON')">💧 Water ON</button>
+  <button onclick="pump('OFF')">✖ Water OFF</button>
+</div>
+
+<canvas id="chart" height="120"></canvas>
+
+<script>
+const MQTT_HOST="4629ff2d3b384c748f95b499f10e4f5b.s1.eu.hivemq.cloud";
+const MQTT_USER="dashboard_user"; // read+write restricted
+const MQTT_PASS="dashboard_pass";
+const TOPIC_SENS="plantpot/sensors";
+const TOPIC_PUMP="plantpot/pump";
+
+const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
+  username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
+});
+
+client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
+
+client.on("message",(t,m)=>{
+  let d=JSON.parse(m.toString());
+  document.getElementById("temp").textContent=d.temp_c??"--";
+  document.getElementById("hum").textContent=d.humidity??"--";
+  document.getElementById("soil").textContent=d.moistureValue??"--";
+  document.getElementById("light").textContent=d.lightValue??"--";
+  addPoint(d.temp_c);
+});
+
+function pump(cmd){ client.publish(TOPIC_PUMP,cmd); }
+
+// Chart.js
+const ctx=document.getElementById("chart");
+const chart=new Chart(ctx,{type:"line",data:{labels:[],datasets:[{label:"Temp °C",data:[],borderColor:"red"}]},options:{scales:{x:{display:false}}}});
+function addPoint(v){if(!v)return;const t=new Date().toLocaleTimeString();chart.data.labels.push(t);chart.data.datasets[0].data.push(v);if(chart.data.labels.length>20){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.update();}
+</script>
+</body>
+</html>
