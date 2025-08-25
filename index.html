@@ -40,7 +40,7 @@
     data-min-value="0"
     data-max-value="50"
     data-major-ticks="0,5,10,15,20,25,30,35,40,45,50"
-    data-value="35"></canvas>
+    data-value="0"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
 
@@ -65,7 +65,7 @@ client.on("message",(t,m)=>{
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
-  if (g && d.temp_c != null) g.value = d.temp_c;
+  // if (g && d.temp_c != null) g.value = d.temp_c;
 });
 
 function pump(cmd){ client.publish(TOPIC_PUMP,cmd); }
