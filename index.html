@@ -34,16 +34,16 @@
   }
   .gauge-title{ text-align:center; font-weight:bold; margin:0 0 .5rem 0; }
 
-  .actions{
+  /* .actions{
   margin:1rem;
-  margin-left:auto;          /* push container to the right */
-  width:max-content;         /* shrink to button width */
+  margin-left:auto;        
+  width:max-content;       
   display:flex;
-  flex-direction:column;     /* stack vertically */
+  flex-direction:column;   
   gap:.5rem;
-  align-items:flex-end;      /* align edges to the right */
+  align-items:flex-end;    
 }
-.actions button{ display:block; }
+.actions button{ display:block; } */
 
 </style>
 </head>
@@ -57,7 +57,8 @@
   <div class="card">Light sensor: <span id="light" class="val">--</span></div>
 </div>
 
-<div class="actions">
+<!-- class="actions"  -->
+<div style="text-align:center;margin:1rem"></divstyle> > 
   <button onclick="pump('ON')">💧 Water ON</button>
   <button onclick="pump('OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
