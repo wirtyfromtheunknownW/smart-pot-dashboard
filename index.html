@@ -108,7 +108,6 @@
   data-value="0"></canvas>
   <p id="lightLabel" style="text-align:center;font-size:1.2rem;font-weight:bold"></p>
 </div>
-
 </div>
 
 
@@ -142,8 +141,8 @@ client.on("message",(t,m)=>{
   return null;
 }
 
-client.on("message",(t,m)=>{
-  const d = JSON.parse(m.toString());
+// client.on("message",(t,m)=>{
+//   const d = JSON.parse(m.toString());
 
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
@@ -171,6 +170,8 @@ client.on("message",(t,m)=>{
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
+  document.getElementById("lightLabel").textContent = d.lightValue ?? "--";
+
 
   const gSoil = document.gauges?.get('soilGauge');
   if (gSoil) {
