@@ -51,7 +51,12 @@
   <button onclick="pump('ON')">💧 Water ON</button>
   <button onclick="pump('OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
+  <button onclick="testNotif()">Test notification
 </div>
+
+<script>
+function testNotif(){ notify("Test", "It works"); }
+</script>
 
 <!-- <canvas id="chart" height="120"></canvas> -->
 <div class="gauges">
@@ -154,13 +159,13 @@ function lightLabelToPercent(lbl){
 async function enableNotifs(){
   if(!("Notification" in window)) { alert("Notifications not supported"); return; }
   const perm = await Notification.requestPermission();
-  if (perm === "granted") new Notification("Notifications enabled", { body:"You’ll get alerts.", silent:true });
+  console.log("Notif permission:", perm);
+  if (perm === "granted") new Notification("Enabled", { body:"You will get alerts.", silent:true });
 }
 
 function notify(title, body){
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-  if (!document.hidden) return; // only when tab not visible
+  if (!("Notification" in window)) { console.log("No Notification API"); return; }
+  if (Notification.permission !== "granted") { console.log("Permission:", Notification.permission); return; }
   new Notification(title, { body });
 }
 
@@ -234,9 +239,12 @@ if (gSoil) {
   }
   if (pct != null) gSoil.value = pct;
 
-  if ((d.moistureValue === "Very Dry" || Number(d.soil_pct) <= 20) && shouldNotify("dry")) {
-  notify("Soil is dry", d.moistureValue ? d.moistureValue : `${d.soil_pct}%`);
-}
+  console.log("moistureValue=", d.moistureValue, "soil_pct=", d.soil_pct);
+  const isVeryDry = String(d.moistureValue||"").toLowerCase()==="very dry";
+  const soilPct   = Number(d.soil_pct);
+  if ((isVeryDry || (Number.isFinite(soilPct) && soilPct<=20)) && shouldNotify("dry")) {
+  notify("Soil is dry", d.moistureValue ?? `${soilPct}%`);
+  }
 
   // dynamic units show the label text
   gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
