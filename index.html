@@ -166,7 +166,7 @@ function notify(title, body){
 
 // simple throttle so you don’t get spammed
 const _last = {};
-function shouldNotify(key, ms=60000){
+function shouldNotify(key, ms=3000){
   const now = Date.now();
   if (_last[key] && now - _last[key] < ms) return false;
   _last[key] = now; return true;
