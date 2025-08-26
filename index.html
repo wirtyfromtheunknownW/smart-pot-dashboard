@@ -129,6 +129,8 @@ client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
 
 client.on("message",(t,m)=>{
 
+
+  
   function lightLabelToPercent(lbl){
   if (!lbl) return null;
   lbl = String(lbl).toLowerCase();
@@ -141,8 +143,7 @@ client.on("message",(t,m)=>{
   return null;
 }
 
-// client.on("message",(t,m)=>{
-//   const d = JSON.parse(m.toString());
+
 
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
@@ -161,7 +162,7 @@ client.on("message",(t,m)=>{
 
     if (pct!=null) gLight.value = pct;
   }
-});
+
 
   let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
