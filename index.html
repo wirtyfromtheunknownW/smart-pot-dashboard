@@ -10,7 +10,7 @@
   body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  .card{background:#111827;padding:1rem;border-radius:12px}
+  .card{background:#2c6b31;padding:1rem;border-radius:12px}
   .val{font-size:2rem;font-weight:bold}
   button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#1f2937;color:#e5e7eb;border:none}
 
@@ -22,10 +22,11 @@
     margin:1rem;
   }
   canvas {
-    background:#111827;
+    background:#2c6b31;
     border-radius:12px;
     padding:0.5rem;
   }
+  .gauge-title{ text-align:center; font-weight:bold; margin:0 0 .5rem 0; }
 
 
 
@@ -49,6 +50,7 @@
 <!-- <canvas id="chart" height="120"></canvas> -->
 <div class="gauges">
 <div>
+  <p class="gauge-title">Temperature</p>
 <canvas id="tempGauge"
     data-type="linear-gauge"
     data-width="120"
@@ -66,6 +68,7 @@
     data-color-bar="rgba(255,255,255,0.2)" ></canvas>
 </div>
 <div>
+  <p class="gauge-title">Soil Moisture</p>
 <canvas id="soilGauge"
     data-type="linear-gauge"
     data-width="120"
@@ -87,6 +90,7 @@
 </div>
 
 <div>
+  <p class="gauge-title">Light</p>
   <canvas id="lightGauge"
   data-type="radial-gauge"
   data-width="220"
@@ -159,30 +163,44 @@ client.on("message",(t,m)=>{
       pct = Math.round(100 - (clipped/4095)*100); // invert so brighter => higher %
     }
 
-    if (pct!=null) gLight.value = pct;
+    if (pct != null) {
+    gLight.value = pct;
+    gLight.update({ units: d.lightValue ?? "% Light" });
+    }
   }
 
 
   // let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
-  document.gauges.get('tempGauge').value = d.temp_c;
   document.getElementById("soilLabel").textContent = d.moistureValue ?? "--";
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
   document.getElementById("lightLabel").textContent = d.lightValue ?? "--";
+  
+    const gTemp = document.gauges?.get('tempGauge');
+  if (gTemp && Number.isFinite(Number(d.temp_c))) {
+    gTemp.value = Number(d.temp_c);
+    gTemp.update({ units: d.temp_c ? d.temp_c + " °C" : "°C" });
+  }
 
 
   const gSoil = document.gauges?.get('soilGauge');
-  if (gSoil) {
-    let val = 0;
-    if (d.moistureValue === "Very Wet") val = 100;
-    else if (d.moistureValue === "Wet") val = 80;
-    else if (d.moistureValue === "Moist") val = 60;
-    else if (d.moistureValue === "Dry") val = 40;
-    else if (d.moistureValue === "Very Dry") val = 20;
-    gSoil.value = val;
+if (gSoil) {
+  // numeric percent if you send it; else map from text
+  let pct = Number.isFinite(Number(d.soil_pct)) ? Number(d.soil_pct) : null;
+  if (pct == null) {
+    if (d.moistureValue === "Very Wet") pct = 100;
+    else if (d.moistureValue === "Wet") pct = 80;
+    else if (d.moistureValue === "Moist") pct = 60;
+    else if (d.moistureValue === "Dry") pct = 40;
+    else if (d.moistureValue === "Very Dry") pct = 20;
   }
+  if (pct != null) gSoil.value = pct;
+
+  // dynamic units show the label text
+  gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
+}
 });
 
 
