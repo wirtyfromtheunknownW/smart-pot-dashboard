@@ -220,11 +220,11 @@ client.on("message",(t,m)=>{
   const ll = document.getElementById("lightLabel");
   if (ll) ll.textContent = d.lightValue ?? "--";
   
-  //   const gTemp = document.gauges?.get('tempGauge');
-  // if (gTemp && Number.isFinite(Number(d.temp_c))) {
-  //   gTemp.value = Number(d.temp_c);
-  //   gTemp.update({ units: d.temp_c ? d.temp_c + " °C" : "°C" });
-  // }
+    const gTemp = document.gauges?.get('tempGauge');
+  if (gTemp && Number.isFinite(Number(d.temp_c))) {
+    gTemp.value = Number(d.temp_c);
+    gTemp.update({ units: d.temp_c ? d.temp_c + " °C" : "°C" });
+  }
 
   const gSoil = document.gauges?.get('soilGauge');
 if (gSoil) {
