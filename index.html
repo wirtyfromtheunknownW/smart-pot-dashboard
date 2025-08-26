@@ -121,17 +121,7 @@ const MQTT_PASS="8354ECQbTRgAeafh:%!$";
 const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
 
-const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
-  username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
-});
-
-client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
-
-client.on("message",(t,m)=>{
-
-
-  
-  function lightLabelToPercent(lbl){
+function lightLabelToPercent(lbl){
   if (!lbl) return null;
   lbl = String(lbl).toLowerCase();
   if (lbl.includes("sensor")) return null;
@@ -143,7 +133,16 @@ client.on("message",(t,m)=>{
   return null;
 }
 
+const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
+  username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
+});
 
+client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
+
+client.on("message",(t,m)=>{
+
+  let d;
+  try { d = JSON.parse(m.toString()); } catch { return; }
 
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
@@ -164,7 +163,7 @@ client.on("message",(t,m)=>{
   }
 
 
-  let d=JSON.parse(m.toString());
+  // let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
   document.gauges.get('tempGauge').value = d.temp_c;
   document.getElementById("soilLabel").textContent = d.moistureValue ?? "--";
