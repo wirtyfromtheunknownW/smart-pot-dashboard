@@ -212,7 +212,7 @@ client.on("message",(t,m)=>{
 
   // let d=JSON.parse(m.toString());
   document.getElementById("temp").textContent = (d.temp_c ?? "--");
-  document.getElementById("soilLabel").textContent = d.moistureValue ?? "--";
+  // document.getElementById("soilLabel").textContent = d.moistureValue ?? "--";
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
