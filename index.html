@@ -239,16 +239,17 @@ if (gSoil) {
   }
   if (pct != null) gSoil.value = pct;
 
-  console.log("moistureValue=", d.moistureValue, "soil_pct=", d.soil_pct);
+
+
+  // dynamic units show the label text
+  gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
+}
+    console.log("moistureValue=", d.moistureValue, "soil_pct=", d.soil_pct);
   const isVeryDry = String(d.moistureValue||"").toLowerCase()==="very dry";
   const soilPct   = Number(d.soil_pct);
   if ((isVeryDry || (Number.isFinite(soilPct) && soilPct<=20)) && shouldNotify("dry")) {
   notify("Soil is dry", d.moistureValue ?? `${soilPct}%`);
   }
-
-  // dynamic units show the label text
-  gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
-}
 });
 
 
