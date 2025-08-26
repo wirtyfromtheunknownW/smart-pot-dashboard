@@ -34,6 +34,16 @@
   }
   .gauge-title{ text-align:center; font-weight:bold; margin:0 0 .5rem 0; }
 
+  .actions{
+  margin:1rem;
+  margin-left:auto;          /* push container to the right */
+  width:max-content;         /* shrink to button width */
+  display:flex;
+  flex-direction:column;     /* stack vertically */
+  gap:.5rem;
+  align-items:flex-end;      /* align edges to the right */
+}
+.actions button{ display:block; }
 
 </style>
 </head>
@@ -46,14 +56,14 @@
   <div class="card">Soil sensor: <span id="soil" class="val">--</span></div>
   <div class="card">Light sensor: <span id="light" class="val">--</span></div>
 </div>
-<aside>
-<div style="text-align:center;margin:1rem">
+
+<div class="actions">
   <button onclick="pump('ON')">💧 Water ON</button>
   <button onclick="pump('OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
   <!-- <button onclick="testNotif()">Test notification -->
 </div>
-</aside>
+
 
 <!-- <script>
 function testNotif(){ notify("Test", "It works"); }
