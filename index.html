@@ -183,10 +183,6 @@ client.on("message",(t,m)=>{
   let d;
   try { d = JSON.parse(m.toString()); } catch { return; }
 
-  if ((d.moistureValue === "Very Dry" || Number(d.soil_pct) <= 20) && shouldNotify("dry")) {
-  notify("Soil is dry", d.moistureValue ? d.moistureValue : `${d.soil_pct}%`);
-}
-
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
   if (gLight){
@@ -224,6 +220,7 @@ client.on("message",(t,m)=>{
   // }
 
 
+
   const gSoil = document.gauges?.get('soilGauge');
 if (gSoil) {
   // numeric percent if you send it; else map from text
@@ -236,6 +233,10 @@ if (gSoil) {
     else if (d.moistureValue === "Very Dry") pct = 19;
   }
   if (pct != null) gSoil.value = pct;
+
+  if ((d.moistureValue === "Very Dry" || Number(d.soil_pct) <= 20) && shouldNotify("dry")) {
+  notify("Soil is dry", d.moistureValue ? d.moistureValue : `${d.soil_pct}%`);
+}
 
   // dynamic units show the label text
   gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
