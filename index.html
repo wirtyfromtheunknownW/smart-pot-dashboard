@@ -50,6 +50,7 @@
 <div style="text-align:center;margin:1rem">
   <button onclick="pump('ON')">💧 Water ON</button>
   <button onclick="pump('OFF')">✖ Water OFF</button>
+  <button onclick="enableNotifs()">🔔 Enable notifications</button>
 </div>
 
 <!-- <canvas id="chart" height="120"></canvas> -->
@@ -150,6 +151,27 @@ function lightLabelToPercent(lbl){
   return null;
 }
 
+async function enableNotifs(){
+  if(!("Notification" in window)) { alert("Notifications not supported"); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === "granted") new Notification("Notifications enabled", { body:"You’ll get alerts.", silent:true });
+}
+
+function notify(title, body){
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  if (!document.hidden) return; // only when tab not visible
+  new Notification(title, { body });
+}
+
+// simple throttle so you don’t get spammed
+const _last = {};
+function shouldNotify(key, ms=60000){
+  const now = Date.now();
+  if (_last[key] && now - _last[key] < ms) return false;
+  _last[key] = now; return true;
+}
+
 const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
   username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
 });
@@ -160,6 +182,10 @@ client.on("message",(t,m)=>{
 
   let d;
   try { d = JSON.parse(m.toString()); } catch { return; }
+
+  if ((d.moistureValue === "Very Dry" || Number(d.soil_pct) <= 20) && shouldNotify("dry")) {
+  notify("Soil is dry", d.moistureValue ? d.moistureValue : `${d.soil_pct}%`);
+}
 
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
