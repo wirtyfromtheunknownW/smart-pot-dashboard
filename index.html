@@ -239,17 +239,24 @@ if (gSoil) {
   }
   if (pct != null) gSoil.value = pct;
 
-
-
   // dynamic units show the label text
   gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
 }
-    console.log("moistureValue=", d.moistureValue, "soil_pct=", d.soil_pct);
-  const isVeryDry = String(d.moistureValue||"").toLowerCase()==="very dry";
-  const soilPct   = Number(d.soil_pct);
-  if ((isVeryDry || (Number.isFinite(soilPct) && soilPct<=20)) && shouldNotify("dry")) {
-  notify("Soil is dry", d.moistureValue ?? `${soilPct}%`);
+  console.log("soil:", d.moistureValue, "soil_pct:", d.soil_pct, "soil_raw:", d.soil_raw ?? d.soil ?? d.soil_adc);
+
+  const mv = String(d.moistureValue || "").toLowerCase();
+  const dryLabel = mv.includes("dry");                 // matches "dry" and "very dry"
+
+  const pct = Number(d.soil_pct);
+  const dryPct = Number.isFinite(pct) && pct <= 25;    // loosen threshold
+
+  const raw = Number(d.soil_raw ?? d.soil ?? d.soil_adc);
+  const dryRaw = Number.isFinite(raw) && raw >= 3000;  // adjust to your mapping
+
+  if ((dryLabel || dryPct || dryRaw) && shouldNotify("dry")) {
+    notify("Soil is dry", d.moistureValue ?? (Number.isFinite(pct) ? `${pct}%` : `raw ${raw}`));
   }
+
 });
 
 
