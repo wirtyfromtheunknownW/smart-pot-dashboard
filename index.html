@@ -34,16 +34,25 @@
   }
   .gauge-title{ text-align:center; font-weight:bold; margin:0 0 .5rem 0; }
 
-  /* .actions{
-  margin:1rem;
-  margin-left:auto;        
-  width:max-content;       
-  display:flex;
-  flex-direction:column;   
-  gap:.5rem;
-  align-items:flex-end;    
+  .actions .action{
+  position:relative;
+  transition:transform .06s, box-shadow .2s, background-color .2s, filter .2s;
 }
-.actions button{ display:block; } */
+.actions .action:active{ transform:scale(.96); }
+.actions .action.pending{
+  filter:saturate(1.2);
+  box-shadow:0 0 0 3px rgba(234,179,8,.5) inset;
+}
+.actions .action.pending::after{
+  content:"";
+  position:absolute; right:10px; top:50%; width:14px; height:14px; margin-top:-7px;
+  border:2px solid rgba(255,255,255,.75); border-top-color:transparent; border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+.actions .action.success{ background:#22c55e; }
+.actions .action.error{   background:#ef4444; }
+@keyframes spin { to{ transform:rotate(360deg); } }
+
 
 </style>
 </head>
@@ -59,8 +68,8 @@
 
 <!-- class="actions"  -->
 <div style="text-align:center;margin:1rem">
-  <button onclick="pump('ON')">💧 Water ON</button>
-  <button onclick="pump('OFF')">✖ Water OFF</button>
+  <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
+  <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
   <button onclick="downloadCSV()">⬇ Export CSV</button>
   <!-- <button onclick="testNotif()">Test notification -->
@@ -157,6 +166,7 @@ const MQTT_USER="hivemq.webclient.1755195003530"; // read+write restricted
 const MQTT_PASS="8354ECQbTRgAeafh:%!$"; 
 const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
+const TOPIC_ACK = "plantpot/pump/ack";
 const TOPIC_STATUS = "plantpot/hivemq.webclient.1755195003530/status";
 const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack";
 
@@ -207,17 +217,48 @@ function downloadCSV(){
   URL.revokeObjectURL(url);
 }
 
+function pump(btn, cmd){
+  // clear old states
+  document.querySelectorAll('.actions .action')
+    .forEach(b => b.classList.remove('success','error'));
+  // set pending on the pressed button
+  if (btn && btn.classList) { btn.classList.add('pending'); btn.disabled = true; }
+  client.publish(TOPIC_PUMP, cmd);
+}
+
 
 const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
   username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
 });
 
 client.on("connect", ()=>{
-  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_PUMP_ACK]);
+  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_PUMP_ACK, TOPIC_ACK]);
 });
 
 
 client.on("message",(t,m)=>{
+
+    if (t === TOPIC_ACK){
+    let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
+
+    const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
+    const btnOff = document.querySelector('.actions .action[data-cmd="OFF"]');
+
+    // clear pending + re-enable both
+    [btnOn, btnOff].forEach(b=>{
+      if (!b) return;
+      b.disabled = false;
+      b.classList.remove('pending');
+    });
+
+    // flash success/error on the relevant button
+    const target = (a.cmd||"").toUpperCase().startsWith("ON") ? btnOn : btnOff;
+    if (target){
+      target.classList.add(a.result==="ok" ? "success" : "error");
+      setTimeout(()=>target.classList.remove("success","error"), 900);
+    }
+    return; // do not parse as sensor data
+  }
 
   let d;
   try { d = JSON.parse(m.toString()); } catch { return; }
@@ -238,7 +279,8 @@ client.on("message",(t,m)=>{
     }
     return;
   }
-
+   
+  
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
   if (gLight){
