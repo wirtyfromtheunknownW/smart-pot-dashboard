@@ -279,7 +279,7 @@ const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
 });
 
 client.on("connect", ()=>{
-  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_PUMP_ACK, TOPIC_ACK]);
+  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK]);
 });
 
 
@@ -386,10 +386,6 @@ if (gSoil) {
 
 });
 
-// // Chart.js
-// const ctx=document.getElementById("chart");
-// const chart=new Chart(ctx,{type:"line",data:{labels:[],datasets:[{label:"Temp °C",data:[],borderColor:"red"}]},options:{scales:{x:{display:false}}}});
-// function addPoint(v){if(!v)return;const t=new Date().toLocaleTimeString();chart.data.labels.push(t);chart.data.datasets[0].data.push(v);if(chart.data.labels.length>20){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.update();}
 </script>
 </body>
 </html>
