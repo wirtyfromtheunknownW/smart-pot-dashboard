@@ -38,7 +38,12 @@
   position:relative;
   transition:transform .06s, box-shadow .2s, background-color .2s, filter .2s;
 }
-.actions .action:active{ transform:scale(.96); }
+
+.actions{ margin:1rem; margin-left:center; width:max-content; display:flex; flex-direction:column; gap:.5rem; align-items:flex-end; }
+.actions .action.active{ box-shadow:0 0 0 3px rgba(34,197,94,.7) inset; }
+.actions .action.active::before{ content:""; position:absolute; left:0; bottom:0; height:3px; width:var(--prog,0%); background:#22c55e; }
+.actions .action.active::after{ content: attr(data-countdown); position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.85rem; opacity:.8; transform:translateY(-50%); }
+
 .actions .action.pending{
   filter:saturate(1.2);
   box-shadow:0 0 0 3px rgba(234,179,8,.5) inset;
@@ -52,6 +57,7 @@
 .actions .action.success{ background:#22c55e; }
 .actions .action.error{   background:#ef4444; }
 @keyframes spin { to{ transform:rotate(360deg); } }
+
 
 
 </style>
@@ -217,6 +223,36 @@ function downloadCSV(){
   URL.revokeObjectURL(url);
 }
 
+let pumpTimer=null, pumpUntil=0, pumpMs=0;
+
+function parseDurationMs(cmd){
+  let ms = 5000;
+  const m = String(cmd).match(/^ON\s+(\d+)/i);
+  if (m) ms = Math.max(500, Math.min(600000, parseInt(m[1],10)*1000));
+  return ms;
+}
+function startCountdown(btn, ms){
+  clearInterval(pumpTimer);
+  pumpMs = ms; pumpUntil = Date.now() + ms;
+  btn.classList.add('active');
+  btn.disabled = true;
+  pumpTimer = setInterval(()=>{
+    const left = Math.max(0, pumpUntil - Date.now());
+    const pct  = 100 - Math.round((left / pumpMs) * 100);
+    btn.style.setProperty('--prog', pct + '%');
+    btn.dataset.countdown = Math.ceil(left/1000) + 's';
+    if (left <= 0) stopCountdown(btn);
+  }, 200);
+}
+function stopCountdown(btn){
+  clearInterval(pumpTimer); pumpTimer=null; pumpUntil=0; pumpMs=0;
+  if (!btn) return;
+  btn.classList.remove('active','pending','success','error');
+  btn.disabled = false;
+  btn.style.removeProperty('--prog');
+  btn.removeAttribute('data-countdown');
+}
+
 function pump(btn, cmd){
   // clear old states
   document.querySelectorAll('.actions .action')
@@ -239,26 +275,30 @@ client.on("connect", ()=>{
 client.on("message",(t,m)=>{
 
     if (t === TOPIC_ACK){
-    let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
+  let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
 
-    const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
-    const btnOff = document.querySelector('.actions .action[data-cmd="OFF"]');
+  const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
+  const btnOff = document.querySelector('.actions .action[data-cmd="OFF"]');
 
-    // clear pending + re-enable both
-    [btnOn, btnOff].forEach(b=>{
-      if (!b) return;
-      b.disabled = false;
-      b.classList.remove('pending');
-    });
+  // clear pending on both
+  [btnOn, btnOff].forEach(b=>{ if(!b) return; b.classList.remove('pending'); b.disabled=false; });
 
-    // flash success/error on the relevant button
-    const target = (a.cmd||"").toUpperCase().startsWith("ON") ? btnOn : btnOff;
-    if (target){
-      target.classList.add(a.result==="ok" ? "success" : "error");
-      setTimeout(()=>target.classList.remove("success","error"), 900);
-    }
-    return; // do not parse as sensor data
+  const U = String(a.cmd||"").toUpperCase();
+  if (U.startsWith("ON")) {
+    const ms = parseDurationMs(a.cmd);
+    if (btnOn) startCountdown(btnOn, ms);
   }
+  if (U === "OFF" || U === "AUTO_OFF") {
+    if (btnOn) stopCountdown(btnOn);
+  }
+
+  const target = U.startsWith("ON") ? btnOn : btnOff;
+  if (target){
+    target.classList.add(a.result==="ok" ? "success" : "error");
+    setTimeout(()=>target.classList.remove('success','error'), 800);
+  }
+  return;
+}
 
   let d;
   try { d = JSON.parse(m.toString()); } catch { return; }
@@ -280,7 +320,7 @@ client.on("message",(t,m)=>{
     return;
   }
    
-  
+   
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
   if (gLight){
@@ -350,8 +390,6 @@ if (gSoil) {
   }
 
 });
-
-
 
 // // Chart.js
 // const ctx=document.getElementById("chart");
