@@ -67,7 +67,7 @@
 </div>
 
 <!-- class="actions"  -->
-<div style="text-align:center;margin:1rem">
+<div class="actions">
   <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
   <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
@@ -352,7 +352,6 @@ if (gSoil) {
 });
 
 
-function pump(cmd){ client.publish(TOPIC_PUMP,cmd); }
 
 // // Chart.js
 // const ctx=document.getElementById("chart");
