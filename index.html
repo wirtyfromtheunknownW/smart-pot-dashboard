@@ -83,8 +83,8 @@
 <div class="actions">
   <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
   <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
-  <button class="action" onclick="enableNotifs()">🔔 Enable notifications</button>
-  <button class="action" onclick="downloadCSV()">⬇ Export CSV</button>
+  <button class="action" onclick="enableNotifs(this)">🔔 Enable notifications</button>
+  <button class="action" onclick="downloadCSV(this)">⬇ Export CSV</button>
   <!-- <button onclick="testNotif()">Test notification -->
 </div>
 
@@ -195,11 +195,11 @@ function lightLabelToPercent(lbl){
   return null;
 }
 
-async function enableNotifs(){
-  if(!("Notification" in window)) { alert("Notifications not supported"); return; }
+async function enableNotifs(btn){
+  if(!("Notification" in window)) { alert("Notifications not supported"); flashError(btn); return; }
   const perm = await Notification.requestPermission();
-  console.log("Notif permission:", perm);
-  if (perm === "granted") new Notification("Enabled", { body:"You will get alerts.", silent:true });
+  if (perm === "granted") { new Notification("Enabled", { body:"You will get alerts.", silent:true }); flashSuccess(btn); }
+  else { flashError(btn); }
 }
 
 function notify(title, body){
@@ -216,18 +216,24 @@ function shouldNotify(key, ms=3000){
   _last[key] = now; return true;
 }
 
+function flashSuccess(btn){ if(!btn) return; btn.classList.add('success'); setTimeout(()=>btn.classList.remove('success'), 800); }
+function flashError(btn){ if(!btn) return; btn.classList.add('error'); setTimeout(()=>btn.classList.remove('error'), 800); }
+
+
 const csvRows = [["ts","temp_c","humidity","soil_pct","light_pct","moistureValue"]];
 function logRow(d){
   const ts = new Date().toISOString();
   csvRows.push([ts, d.temp_c ?? "", d.humidity ?? "", d.soil_pct ?? "", d.light_pct ?? "", d.moistureValue ?? ""]);
 }
-function downloadCSV(){
+
+function downloadCSV(btn){
   const csv = csvRows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = "plantpot_log.csv"; a.click();
   URL.revokeObjectURL(url);
+  flashSuccess(btn);
 }
 
 let pumpTimer=null, pumpUntil=0, pumpMs=0;
