@@ -8,7 +8,7 @@
 <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <style>
   body{font-family:sans-serif; 
-    background: linear-gradient(to bottom, #3a4c2a, #4b4b2a, #4a432b);
+    background: linear-gradient(to right, #2A7B9B,#57C785,#EDDD53);
     background-attachment: fixed;
     color:#e5e7eb;
     margin:0
@@ -223,7 +223,7 @@ client.on("message",(t,m)=>{
   try { d = JSON.parse(m.toString()); } catch { return; }
 
     if (t === TOPIC_SENS) logRow(d);
-    
+
     if (t === TOPIC_STATUS) {
     console.log("status:", m.toString());
     notify("Статус", m.toString()); // Notifications API (Application Programming Interface)
