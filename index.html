@@ -181,7 +181,7 @@ const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
 const TOPIC_ACK = "plantpot/pump/ack";
 const TOPIC_STATUS = "plantpot/hivemq.webclient.1755195003530/status";
-const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack";
+// const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack"
 
 function lightLabelToPercent(lbl){
   if (!lbl) return null;
@@ -261,11 +261,15 @@ function stopCountdown(btn){
 }
 
 function pump(btn, cmd){
-  // clear old states
-  document.querySelectorAll('.actions .action')
-    .forEach(b => b.classList.remove('success','error'));
-  // set pending on the pressed button
-  if (btn && btn.classList) { btn.classList.add('pending'); btn.disabled = true; }
+  document.querySelectorAll('.actions .action').forEach(b=>b.classList.remove('success','error'));
+  if (btn && btn.classList) btn.classList.add('pending');
+
+  // start countdown immediately for ON; ACK will just confirm
+  const btnOn = document.querySelector('.actions .action[data-cmd="ON"]');
+  if (/^ON/i.test(cmd) && btnOn){
+    const ms = parseDurationMs(cmd);
+    startCountdown(btnOn, ms);
+  }
   client.publish(TOPIC_PUMP, cmd);
 }
 
@@ -281,23 +285,17 @@ client.on("connect", ()=>{
 
 client.on("message",(t,m)=>{
 
-    if (t === TOPIC_ACK){
+  if (t === TOPIC_ACK){
   let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
 
   const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
   const btnOff = document.querySelector('.actions .action[data-cmd="OFF"]');
 
-  // clear pending on both
-  [btnOn, btnOff].forEach(b=>{ if(!b) return; b.classList.remove('pending'); b.disabled=false; });
+  // clear pending markers
+  [btnOn, btnOff].forEach(b=>{ if(!b) return; b.classList.remove('pending'); });
 
   const U = String(a.cmd||"").toUpperCase();
-  if (U.startsWith("ON")) {
-    const ms = parseDurationMs(a.cmd);
-    if (btnOn) startCountdown(btnOn, ms);
-  }
-  if (U === "OFF" || U === "AUTO_OFF") {
-    if (btnOn) stopCountdown(btnOn);
-  }
+  if (U === "OFF" || U === "AUTO_OFF") { if (btnOn) stopCountdown(btnOn); }
 
   const target = U.startsWith("ON") ? btnOn : btnOff;
   if (target){
@@ -317,16 +315,6 @@ client.on("message",(t,m)=>{
     notify("Статус", m.toString()); // Notifications API (Application Programming Interface)
     return;
   }
-  if (t === TOPIC_PUMP_ACK) {
-    try {
-      const a = JSON.parse(m.toString());
-      notify("Помпа ACK", `${a.cmd} → ${a.result}`);
-    } catch {
-      notify("Помпа ACK", m.toString());
-    }
-    return;
-  }
-   
    
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
