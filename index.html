@@ -18,7 +18,7 @@
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
   .card{background:transparent;padding:1rem;border-radius:12px}
   .val{font-size:2rem;font-weight:bold}
-  button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#A0D3E8;color:#e5e7eb;border:none}
+  button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#32aadd;color:#e5e7eb;border:none}
 
   .gauges {
     display:flex;
@@ -62,6 +62,7 @@
   <button onclick="pump('ON')">💧 Water ON</button>
   <button onclick="pump('OFF')">✖ Water OFF</button>
   <button onclick="enableNotifs()">🔔 Enable notifications</button>
+  <button onclick="downloadCSV()">⬇ Export CSV</button>
   <!-- <button onclick="testNotif()">Test notification -->
 </div>
 
@@ -156,6 +157,8 @@ const MQTT_USER="hivemq.webclient.1755195003530"; // read+write restricted
 const MQTT_PASS="8354ECQbTRgAeafh:%!$"; 
 const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
+const TOPIC_STATUS = "plantpot/hivemq.webclient.1755195003530/status";
+const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack";
 
 function lightLabelToPercent(lbl){
   if (!lbl) return null;
@@ -190,16 +193,51 @@ function shouldNotify(key, ms=3000){
   _last[key] = now; return true;
 }
 
+const csvRows = [["ts","temp_c","humidity","soil_pct","light_pct","moistureValue"]];
+function logRow(d){
+  const ts = new Date().toISOString();
+  csvRows.push([ts, d.temp_c ?? "", d.humidity ?? "", d.soil_pct ?? "", d.light_pct ?? "", d.moistureValue ?? ""]);
+}
+function downloadCSV(){
+  const csv = csvRows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "plantpot_log.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+
 const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
   username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
 });
 
-client.on("connect",()=>{client.subscribe(TOPIC_SENS);});
+client.on("connect", ()=>{
+  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_PUMP_ACK]);
+});
+
 
 client.on("message",(t,m)=>{
 
   let d;
   try { d = JSON.parse(m.toString()); } catch { return; }
+
+    if (t === TOPIC_SENS) logRow(d);
+    
+    if (t === TOPIC_STATUS) {
+    console.log("status:", m.toString());
+    notify("Статус", m.toString()); // Notifications API (Application Programming Interface)
+    return;
+  }
+  if (t === TOPIC_PUMP_ACK) {
+    try {
+      const a = JSON.parse(m.toString());
+      notify("Помпа ACK", `${a.cmd} → ${a.result}`);
+    } catch {
+      notify("Помпа ACK", m.toString());
+    }
+    return;
+  }
 
   // --- LIGHT update ---
   const gLight = document.gauges?.get('lightGauge');
