@@ -81,7 +81,7 @@
 </head>
 <body>
   <header>🌱 Smart Plant Pot Dashboard</header>
-  
+
   <div class="grid">
   <div class="card">Temp sensor: <span id="temp" class="val">--</span> °C</div>
   <div class="card">Hum sensor: <span id="hum" class="val">--</span> %</div>
@@ -93,16 +93,13 @@
 <aside class="sidebar">
 <main>
 
-
-
-<!-- class="actions"  -->
 <div class="section">
   <h3>Ръчно поливане</h3>
   <p class="hint">Пуска/спира помпата за тест. „ON“ е 5 s по подразбиране.</p>
   <div class="actions">
     <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
     <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
-    <span id="statusDot" style="margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444;">OFF</span>
+    <span id="statusDot" style="margin-left:20px;padding:4px 8px;border-radius:8px;background:#ef4444;">OFF</span>
   </div>
 </div>
 
