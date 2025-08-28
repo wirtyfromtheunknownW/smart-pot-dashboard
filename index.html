@@ -181,6 +181,7 @@ const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
 const TOPIC_ACK = "plantpot/pump/ack";
 const TOPIC_STATUS = "plantpot/status";
+
 // const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack"
 
 function lightLabelToPercent(lbl){
@@ -285,12 +286,19 @@ const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
 });
 
 client.on("connect", ()=>{
-  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK]);
+  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK, "plantpot/diag"]);
 });
 
 
 client.on("message",(t,m)=>{
 
+  if (t === "plantpot/diag") {
+    try { console.log("diag:", JSON.parse(m.toString())); }
+    catch { console.log("diag:", m.toString()); }
+    // тук по-късно можем да покажем статус в UI
+    return;
+  }
+  
   if (t === TOPIC_ACK){
   let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
 
