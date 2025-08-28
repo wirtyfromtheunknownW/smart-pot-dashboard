@@ -19,7 +19,8 @@
   .card{background:transparent;padding:1rem;border-radius:12px}
   .val{font-size:2rem;font-weight:bold}
   button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#32aadd;color:#e5e7eb;border:none}
-
+  input.num{width:6rem;padding:.45rem .6rem;border-radius:8px;border:none;background:#1f2a2e;color:#e5e7eb}
+  label.small{font-size:.85rem;opacity:.9;margin:0 .25rem}
   .gauges {
     display:flex;
     gap:2rem;
@@ -87,6 +88,23 @@
   <button class="action" onclick="enableNotifs(this)">🔔 Enable notifications</button>
   <button class="action" onclick="downloadCSV(this)">⬇ Export CSV</button>
   <!-- <button onclick="testNotif()">Test notification -->
+      <button class="action" data-cmd="AUTO ON"  onclick="sendCmd(this,'AUTO ON')">🤖 AUTO ON</button>
+  <button class="action" data-cmd="AUTO OFF" onclick="sendCmd(this,'AUTO OFF')">🛑 AUTO OFF</button>
+
+  <label class="small">LOW</label>
+  <input id="low"   class="num" type="number" value="2800" min="100" max="4095">
+  <button class="action" data-cmd="SET LOW"   onclick="sendCmd(this,'SET LOW '+document.getElementById('low').value)">Set LOW</button>
+
+  <label class="small">HIGH</label>
+  <input id="high"  class="num" type="number" value="2200" min="50" max="4094">
+  <button class="action" data-cmd="SET HIGH"  onclick="sendCmd(this,'SET HIGH '+document.getElementById('high').value)">Set HIGH</button>
+
+  <label class="small">MAXMS</label>
+  <input id="maxms" class="num" type="number" value="30000" min="500" max="600000">
+  <button class="action" data-cmd="SET MAXMS" onclick="sendCmd(this,'SET MAXMS '+document.getElementById('maxms').value)">Set MAXMS</button>
+
+  <button class="action" data-cmd="STATUS" onclick="sendCmd(this,'STATUS')">ℹ STATUS</button>
+
 </div>
 
 
@@ -182,6 +200,7 @@ const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
 const TOPIC_ACK = "plantpot/pump/ack";
 const TOPIC_STATUS = "plantpot/status";
+const TOPIC_CFG  = "plantpot/cfg";
 
 // const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack"
 
@@ -281,18 +300,39 @@ function pump(btn, cmd){
   client.publish(TOPIC_PUMP, cmd);
 }
 
+function sendCmd(btn, cmd){
+  document.querySelectorAll('.actions .action').forEach(b=>b.classList.remove('success','error'));
+  if (btn && btn.classList) btn.classList.add('pending');
+  client.publish(TOPIC_PUMP, cmd);
+}
 
 const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
   username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
 });
 
 client.on("connect", ()=>{
-  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK, "plantpot/diag"]);
+  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK, TOPIC_CFG, "plantpot/diag"]);
 });
 
 
 client.on("message",(t,m)=>{
 
+  if (t === TOPIC_CFG) {
+    let c; try { c = JSON.parse(m.toString()); } catch { c = {}; }
+    if (Number.isFinite(c.soilLow))  document.getElementById('low').value   = c.soilLow;
+    if (Number.isFinite(c.soilHigh)) document.getElementById('high').value  = c.soilHigh;
+    if (Number.isFinite(c.max_ms))   document.getElementById('maxms').value = c.max_ms;
+    // визуален статус за AUTO
+    const autoOnBtn  = document.querySelector('.actions .action[data-cmd="AUTO ON"]');
+    const autoOffBtn = document.querySelector('.actions .action[data-cmd="AUTO OFF"]');
+    if (autoOnBtn && autoOffBtn) {
+      const isOn = !!c.auto;
+      autoOnBtn.classList.toggle('active', isOn);
+      autoOffBtn.classList.toggle('active', !isOn);
+    }
+    return;
+  }
+  
   if (t === "plantpot/diag") {
     let d; try { d = JSON.parse(m.toString()); } catch { d = null; }
     const dot = document.getElementById("statusDot");
@@ -303,7 +343,7 @@ client.on("message",(t,m)=>{
     }
     return;
   }
-  
+
   if (t === "plantpot/diag") {
     try { console.log("diag:", JSON.parse(m.toString())); }
     catch { console.log("diag:", m.toString()); }
@@ -313,21 +353,31 @@ client.on("message",(t,m)=>{
 
   if (t === TOPIC_ACK){
   let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
-
-  const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
-  const btnOff = document.querySelector('.actions .action[data-cmd="OFF"]');
-
-  // clear pending markers
-  [btnOn, btnOff].forEach(b=>{ if(!b) return; b.classList.remove('pending'); });
-
   const U = String(a.cmd||"").toUpperCase();
-  if (U === "OFF" || U === "AUTO_OFF") { if (btnOn) stopCountdown(btnOn); }
 
-  const target = U.startsWith("ON") ? btnOn : btnOff;
+  // махни pending от всички бутони
+  document.querySelectorAll('.actions .action.pending').forEach(b=>b.classList.remove('pending'));
+
+  // избери бутон според командата
+  let sel = null;
+  if (U.startsWith("ON")) sel = '.actions .action[data-cmd="ON"]';
+  else if (U==="OFF" || U==="AUTO_OFF") sel = '.actions .action[data-cmd="OFF"]';
+  else if (U==="AUTO ON")  sel = '.actions .action[data-cmd="AUTO ON"]';
+  else if (U==="AUTO OFF") sel = '.actions .action[data-cmd="AUTO OFF"]';
+  else if (U.startsWith("SET LOW"))   sel = '.actions .action[data-cmd="SET LOW"]';
+  else if (U.startsWith("SET HIGH"))  sel = '.actions .action[data-cmd="SET HIGH"]';
+  else if (U.startsWith("SET MAXMS")) sel = '.actions .action[data-cmd="SET MAXMS"]';
+  else if (U==="STATUS") sel = '.actions .action[data-cmd="STATUS"]';
+
+  const target = sel ? document.querySelector(sel) : null;
   if (target){
     target.classList.add(a.result==="ok" ? "success" : "error");
     setTimeout(()=>target.classList.remove('success','error'), 800);
   }
+
+  // ако получим AUTO_OFF от ESP, спри визуалния countdown на ON бутона
+  const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
+  if (btnOn && (U==="OFF" || U==="AUTO_OFF")) stopCountdown(btnOn);
   return;
 }
 
