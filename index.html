@@ -79,6 +79,7 @@
   <div class="card">Light sensor: <span id="light" class="val">--</span></div>
 </div>
 
+<span id="statusDot" style="margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444;">OFF</span>
 <!-- class="actions"  -->
 <div class="actions">
   <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
@@ -293,12 +294,23 @@ client.on("connect", ()=>{
 client.on("message",(t,m)=>{
 
   if (t === "plantpot/diag") {
+    let d; try { d = JSON.parse(m.toString()); } catch { d = null; }
+    const dot = document.getElementById("statusDot");
+    if (dot) {
+      const ok = d && d.mqtt_ok===1 && d.wifi_ok===1;
+      dot.textContent = ok ? "ON" : "OFF";
+      dot.style.background = ok ? "#22c55e" : "#ef4444";
+    }
+    return;
+  }
+  
+  if (t === "plantpot/diag") {
     try { console.log("diag:", JSON.parse(m.toString())); }
     catch { console.log("diag:", m.toString()); }
     // тук по-късно можем да покажем статус в UI
     return;
   }
-  
+
   if (t === TOPIC_ACK){
   let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
 
