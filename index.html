@@ -8,7 +8,7 @@
 <style>
   body{font-family:sans-serif;background:linear-gradient(to right,#649173,#DBD5A4);background-attachment:fixed;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
-  header .nav{position:absolute;right:1rem;top: 10px;display:flex;gap:.5rem}
+  header .nav{display:flex;gap:.5rem}
   .page{display:none}
   .page.active{display:block}
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -69,11 +69,12 @@
     .val { font-size: 2.5rem; }
   }
 
-.header-content {
+/* .header-content {
   display: flex;
+  min-width: 600px;
   align-items: center;
-  justify-content: space-between; /* pushes title left, nav right */
-}
+  justify-content: space-between; pushes title left, nav right;
+} */
 
 header .title {
   font-weight: 700;
@@ -86,15 +87,16 @@ header .title {
 <header>
   <div class="header-content">
     <div class="title">🌱 Smart Plant Pot</div>
-    <div class="nav">
+  </div>
+      <div class="nav">
       <button onclick="showPage('dashboardPage')">📊 Dashboard</button>
       <button onclick="showPage('settingsPage')">⚙ Settings</button>
-    </div>
   </div>
 </header>
 
 <!-- ====================== DASHBOARD PAGE ====================== -->
 <div id="dashboardPage" class="page active">
+  
   <div class="grid">
     <div class="card">Temp sensor: <span id="temp" class="val">--</span> °C</div>
     <div class="card">Hum sensor: <span id="hum" class="val">--</span> %</div>
