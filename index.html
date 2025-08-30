@@ -8,7 +8,7 @@
 <style>
   body{font-family:sans-serif;background:linear-gradient(to right,#649173,#DBD5A4);background-attachment:fixed;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
-  header .nav{display:flex;gap:.5rem}
+  header .nav{display:contents;gap:.5rem}
   .page{display:none}
   .page.active{display:block}
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -33,7 +33,7 @@
   .section{margin:1rem auto;max-width:900px}
   .section h3{margin:.3rem 0}
   .section p.hint{font-size:.9rem;opacity:.9;margin:.25rem 0 1rem}
-  .status-dot{margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444}
+  .status-dot{margin: 2px;padding:4px 8px;border-radius:8px;background:#ef4444;padding-top: 5px;}
   @media (max-width: 768px){
   header{font-size:1rem}
   button,input.num{font-size:.95rem}
@@ -91,6 +91,8 @@ header .title {
       <div class="nav">
       <button onclick="showPage('dashboardPage')">📊 Dashboard</button>
       <button onclick="showPage('settingsPage')">⚙ Settings</button>
+      <span id="statusDot" class="status-dot">OFF</span>
+
   </div>
 </header>
 
@@ -108,7 +110,6 @@ header .title {
     <div class="actions">
       <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
       <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
-      <span id="statusDot" class="status-dot">OFF</span>
       <button class="action" onclick="enableNotifs(this)">🔔 Enable notifications</button>
       <button class="action" onclick="downloadCSV(this)">⬇ Export CSV</button>
     </div>
