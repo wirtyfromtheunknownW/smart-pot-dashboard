@@ -8,7 +8,7 @@
 <style>
   body{font-family:sans-serif;background:linear-gradient(to right,#649173,#DBD5A4);background-attachment:fixed;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
-  header .nav{position:absolute;right:1rem;top:1rem;display:flex;gap:.5rem}
+  header .nav{position:absolute;right:1rem;top: 10px;display:flex;gap:.5rem}
   .page{display:none}
   .page.active{display:block}
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -34,15 +34,42 @@
   .section h3{margin:.3rem 0}
   .section p.hint{font-size:.9rem;opacity:.9;margin:.25rem 0 1rem}
   .status-dot{margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444}
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { margin-left: 0; padding: 0.5rem; }
+    .gauges { flex-direction: column; align-items: center; }
+    canvas { width: 100% !important; height: auto !important; }
+    header { font-size: 1rem; }
+    button, input.num { font-size: 0.9rem; padding: .4rem .8rem; }
+    .val { font-size: 1.5rem; }
+  }
+  @media (min-width: 1400px) {
+    .layout { grid-template-columns: 300px 1fr; }
+    .gauges { gap: 3rem; }
+    .val { font-size: 2.5rem; }
+  }
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* pushes title left, nav right */
+}
+
+header .title {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
 </style>
 </head>
 <body>
 
 <header>
-  🌱 Smart Plant Pot
-  <div class="nav">
-    <button onclick="showPage('dashboardPage')">📊 Dashboard</button>
-    <button onclick="showPage('settingsPage')">⚙ Settings</button>
+  <div class="header-content">
+    <div class="title">🌱 Smart Plant Pot</div>
+    <div class="nav">
+      <button onclick="showPage('dashboardPage')">📊 Dashboard</button>
+      <button onclick="showPage('settingsPage')">⚙ Settings</button>
+    </div>
   </div>
 </header>
 
