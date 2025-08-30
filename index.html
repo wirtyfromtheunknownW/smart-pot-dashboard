@@ -5,241 +5,156 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Smart Plant Pot</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <style>
-  body{font-family:sans-serif; 
-    background: linear-gradient(to right, #649173,#DBD5A4);
-    background-attachment: fixed;
-    color:#e5e7eb;
-    margin:0
-    }
-  
+  body{font-family:sans-serif;background:linear-gradient(to right,#649173,#DBD5A4);background-attachment:fixed;color:#e5e7eb;margin:0}
   header{padding:1rem;text-align:center;font-weight:700}
+  header .nav{position:absolute;right:1rem;top:1rem;display:flex;gap:.5rem}
+  .page{display:none}
+  .page.active{display:block}
   .grid{display:grid;gap:1rem;padding:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
   .card{background:transparent;padding:1rem;border-radius:12px}
   .val{font-size:2rem;font-weight:bold}
   button{margin:.5rem;padding:.5rem 1rem;border-radius:8px;background:#32aadd;color:#e5e7eb;border:none}
+  .actions{margin:1rem auto;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+  .actions .action{position:relative;transition:transform .06s,box-shadow .2s,background-color .2s,filter .2s;padding-right:2.2rem}
+  .actions .action.active{box-shadow:0 0 0 3px rgba(34,197,94,.7) inset}
+  .actions .action.active::before{content:"";position:absolute;left:0;bottom:0;height:3px;width:var(--prog,0%);background:#22c55e}
+  .actions .action.active::after{content:attr(data-countdown);position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:.85rem;opacity:.8}
+  .actions .action.pending{filter:saturate(1.2);box-shadow:0 0 0 3px rgba(234,179,8,.5) inset}
+  .actions .action.pending::after{content:"";position:absolute;right:10px;top:50%;width:14px;height:14px;margin-top:-7px;border:2px solid rgba(255,255,255,.75);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+  .actions .action.success{background:#22c55e}
+  .actions .action.error{background:#ef4444}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .gauges{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin:1rem}
+  canvas{background:transparent;border-radius:12px;padding:.5rem}
+  .gauge-title{text-align:center;font-weight:bold;margin:0 0 .5rem 0}
   input.num{width:6rem;padding:.45rem .6rem;border-radius:8px;border:none;background:#1f2a2e;color:#e5e7eb}
   label.small{font-size:.85rem;opacity:.9;margin:0 .25rem}
-  .layout{display:grid;grid-template-columns:260px 1fr;gap:1rem}
-  .sidebar{padding:1rem; margin-left: 150px;}
-  .sidebar h3{margin:.3rem 0}
-  .sidebar p.hint{font-size:.85rem;opacity:.85;margin:.25rem 0 1rem}
-  .sidebar .section{margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid rgba(255,255,255,.15)}
-  input.num{width:6rem;padding:.45rem .6rem;border-radius:8px;border:none;background:#1f2a2e;color:#e5e7eb}
-  label.small{font-size:.85rem;opacity:.9;margin:0 .25rem}
-
-
-  .gauges {
-    display:flex;
-    gap:2rem;
-    justify-content:center;
-    flex-wrap:wrap; /* stack on small screens */
-    margin:1rem;
-  }
-  canvas {
-    background:transparent;
-    border-radius:12px;
-    padding:0.5rem;
-  }
-  .gauge-title{ text-align:center; font-weight:bold; margin:0 0 .5rem 0; }
-
-    .actions .action{
-    position:relative;
-    transition:transform .06s, box-shadow .2s, background-color .2s, filter .2s;
-    padding-right:2.2rem; /* space for spinner/countdown on the right */
-  }
-
-  .actions{margin:1rem auto;
-  display:flex;
-  flex-direction:row;
-  gap:.5rem;
-  justify-content:center;    /* center row */
-  }
-
-  .actions .action.active{ box-shadow:0 0 0 3px rgba(34,197,94,.7) inset; }
-  .actions .action.active::before{ content:""; position:absolute; left:0; bottom:0; height:3px; width:var(--prog,0%); background:#22c55e; }
-  .actions .action.active::after{ content: attr(data-countdown); position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.85rem; opacity:.8; transform:translateY(-50%); }
-
-  .actions .action.pending{
-    filter:saturate(1.2);
-    box-shadow:0 0 0 3px rgba(234,179,8,.5) inset;
-  }
-  .actions .action.pending::after{
-    content:"";
-    position:absolute; right:10px; top:50%; width:14px; height:14px; margin-top:-7px;
-    border:2px solid rgba(255,255,255,.75); border-top-color:transparent; border-radius:50%;
-    animation:spin .8s linear infinite;
-  }
-  .actions .action.success{ background:#22c55e; }
-  .actions .action.error{   background:#ef4444; }
-  @keyframes spin { to{ transform:rotate(360deg); } }
-
-
-
+  .section{margin:1rem auto;max-width:900px}
+  .section h3{margin:.3rem 0}
+  .section p.hint{font-size:.9rem;opacity:.9;margin:.25rem 0 1rem}
+  .status-dot{margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444}
 </style>
 </head>
 <body>
-  <header>🌱 Smart Plant Pot Dashboard</header>
 
+<header>
+  🌱 Smart Plant Pot
+  <div class="nav">
+    <button onclick="showPage('dashboardPage')">📊 Dashboard</button>
+    <button onclick="showPage('settingsPage')">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- ====================== DASHBOARD PAGE ====================== -->
+<div id="dashboardPage" class="page active">
   <div class="grid">
-  <div class="card">Temp sensor: <span id="temp" class="val">--</span> °C</div>
-  <div class="card">Hum sensor: <span id="hum" class="val">--</span> %</div>
-  <div class="card">Soil sensor: <span id="soil" class="val">--</span></div>
-  <div class="card">Light sensor: <span id="light" class="val">--</span></div>
+    <div class="card">Temp sensor: <span id="temp" class="val">--</span> °C</div>
+    <div class="card">Hum sensor: <span id="hum" class="val">--</span> %</div>
+    <div class="card">Soil sensor: <span id="soil" class="val">--</span></div>
+    <div class="card">Light sensor: <span id="light" class="val">--</span></div>
   </div>
 
-<div class="layout">
-<aside class="sidebar">
-<main>
+  <div class="section">
+    <div class="actions">
+      <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
+      <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
+      <span id="statusDot" class="status-dot">OFF</span>
+      <button class="action" onclick="enableNotifs(this)">🔔 Enable notifications</button>
+      <button class="action" onclick="downloadCSV(this)">⬇ Export CSV</button>
+    </div>
+  </div>
 
-<div class="section">
-  <h3>Ръчно поливане</h3>
-  <p class="hint">Пуска/спира помпата за тест. „ON“ е 5 s по подразбиране.</p>
-  <div class="actions">
-    <button class="action" data-cmd="ON"  onclick="pump(this,'ON')">💧 Water ON</button>
-    <button class="action" data-cmd="OFF" onclick="pump(this,'OFF')">✖ Water OFF</button>
-    <span id="statusDot" style="margin-left:8px;padding:4px 8px;border-radius:8px;background:#ef4444;">OFF</span>
+  <div class="gauges">
+    <div>
+      <p class="gauge-title">Temperature</p>
+      <canvas id="tempGauge"
+        data-type="linear-gauge" data-width="120" data-height="400"
+        data-units="°C" data-min-value="0" data-max-value="40"
+        data-major-ticks="0,5,10,15,20,25,30,35,40"
+        data-value="20" data-value-int="2" data-value-dec="1"
+        data-borders="false" data-border-shadow-width="0"
+        data-color-bar-progress="red" data-color-bar="rgba(255,255,255,0.2)"></canvas>
+    </div>
+    <div>
+      <p class="gauge-title">Soil Moisture</p>
+      <canvas id="soilGauge"
+        data-type="linear-gauge" data-width="120" data-height="400"
+        data-min-value="0" data-max-value="100"
+        data-major-ticks=" " data-tick-side="none" data-number-side="none"
+        data-units="% Soil moisture" data-value-int="2" data-value-dec="0"
+        data-borders="false" data-border-shadow-width="0"
+        data-color-bar-progress="blue" data-color-bar="rgba(56,210,224,0.2)"></canvas>
+    </div>
+    <div>
+      <p class="gauge-title">Light</p>
+      <canvas id="lightGauge"
+        data-type="radial-gauge" data-width="220" data-height="220"
+        data-units="% Light" data-min-value="0" data-max-value="100"
+        data-major-ticks="0,20,40,60,80,100" data-minor-ticks="2"
+        data-value-box="true" data-value-int="3" data-value-dec="0"
+        data-borders="false" data-border-shadow-width="0"
+        data-color-plate="transparent"
+        data-color-bar="rgba(255,255,255,.12)"
+        data-color-bar-progress="#eab308"
+        data-highlights='[{"from":0,"to":20,"color":"rgba(184,184,169,5)"},{"from":20,"to":70,"color":"rgba(255,255,125,5)"},{"from":70,"to":100,"color":"rgba(250,250,7,5)"}]'
+        data-value="0"></canvas>
+    </div>
   </div>
 </div>
 
-<div class="section">
-  <h3>Автоматичен режим</h3>
-  <p class="hint">Автоматично стартира при сухо (≥ LOW) и спира при мокро (≤ HIGH).</p>
-  <div class="actions">
-    <button class="action" data-cmd="AUTO ON"  onclick="sendCmd(this,'AUTO ON')">🤖 AUTO ON</button>
-    <button class="action" data-cmd="AUTO OFF" onclick="sendCmd(this,'AUTO OFF')">🛑 AUTO OFF</button>
-    <button class="action" data-cmd="STATUS"   onclick="sendCmd(this,'STATUS')">ℹ STATUS</button>
-  </div>
-</div>
-
-<div class="section">
-  <h3>Параметри</h3>
-  <p class="hint">LOW: праг за „сухо“. HIGH: праг за „мокро“. MAXMS: максимум време на един цикъл.</p>
-  <div class="actions">
-    <label class="small">LOW</label>
-    <input id="low" class="num" type="number" value="2800" min="100" max="4095">
-    <button class="action" data-cmd="SET LOW" onclick="sendCmd(this,'SET LOW '+document.getElementById('low').value)">Set LOW</button>
-  </div>
-  <div class="actions">
-    <label class="small">HIGH</label>
-    <input id="high" class="num" type="number" value="2200" min="50" max="4094">
-    <button class="action" data-cmd="SET HIGH" onclick="sendCmd(this,'SET HIGH '+document.getElementById('high').value)">Set HIGH</button>
-  </div>
-  <div class="actions">
-    <label class="small">MAXMS</label>
-    <input id="maxms" class="num" type="number" value="30000" min="500" max="600000">
-    <button class="action" data-cmd="SET MAXMS" onclick="sendCmd(this,'SET MAXMS '+document.getElementById('maxms').value)">Set MAXMS</button>
-  </div>
-</div>
-
-<div class="section">
-  <h3>Помощни</h3>
-  <div class="actions">
-    <button class="action" onclick="enableNotifs(this)">🔔 Enable notifications</button>
-    <button class="action" onclick="downloadCSV(this)">⬇ Export CSV</button>
-  </div>
-</div>
-</aside>
-<main>
-
-<!-- <script>
-function testNotif(){ notify("Test", "It works"); }
-</script> -->
-
-<!-- <canvas id="chart" height="120"></canvas> -->
-<div class="gauges">
-  <div>
-  <p class="gauge-title">Temperature</p>
-  <canvas id="tempGauge"
-    data-type="linear-gauge"
-    data-width="120"
-    data-height="400"
-    data-units="°C"
-    data-min-value="0"
-    data-max-value="40"
-    data-major-ticks="0,5,10,15,20,25,30,35,40"
-    data-value="20"
-    data-value-int="2"
-    data-value-dec="1"
-    data-borders="false"
-    background: transparent;
-    data-border-shadow-width="0"
-    data-color-bar-progress="red"
-    data-color-bar="rgba(255,255,255,0.2)"
-    ></canvas>
-  </div>
-  <div>
-  <p class="gauge-title">Soil Moisture</p>
-  <canvas id="soilGauge"
-    data-type="linear-gauge"
-    data-width="120"
-    data-height="400"
-    data-units="Soil moisture"
-    data-min-value="0"
-    data-max-value="100"
-    data-major-ticks=" "
-    data-tick-side="none"
-    data-number-side="none"
-    data-units="% Soil moisture" 
-    data-value-int="2"
-    data-value-dec="0"
-    data-borders="false"
-    background: transparent;
-    data-border-shadow-width="0"
-    data-color-bar-progress="blue"
-    data-color-bar="rgba(56, 210, 224,0.2)"
-  ></canvas>
+<!-- ====================== SETTINGS PAGE ====================== -->
+<div id="settingsPage" class="page">
+  <div class="section">
+    <h3>Automatic mode</h3>
+    <p class="hint">Starts when soil is dry (≥ LOW). Stops when wet (≤ HIGH). Limits each run to MAXMS.</p>
+    <div class="actions">
+      <button class="action" data-cmd="AUTO ON"  onclick="sendCmd(this,'AUTO ON')">🤖 AUTO ON</button>
+      <button class="action" data-cmd="AUTO OFF" onclick="sendCmd(this,'AUTO OFF')">🛑 AUTO OFF</button>
+      <button class="action" data-cmd="STATUS"   onclick="sendCmd(this,'STATUS')">ℹ STATUS</button>
+    </div>
   </div>
 
-  <div>
-    <p class="gauge-title">Light</p>
-    <canvas id="lightGauge"
-    data-type="radial-gauge"
-    data-width="220"
-    data-height="220"
-    data-units="% Light"
-    data-min-value="0" data-max-value="100"
-    data-major-ticks="0,20,40,60,80,100"
-    data-minor-ticks="2"
-    data-value-box="true"
-    data-value-int="3"
-    data-value-dec="0"
-    data-borders="false" 
-    data-border-shadow-width="0"
-    background: transparent;
-    data-color-plate="#f0f0f0"
-    data-color-bar="rgba(255,255,255,0.15)"
-    data-color-bar-progress="#eab308"
-    data-highlights='[
-      {"from":0,"to":20,"color":"rgba(184,184,169,5)"},
-      {"from":20,"to":70,"color":"rgba(255,255,125,5)"},
-      {"from":70,"to":100,"color":"rgba(250,250,7,5)"}]'
-      data-value="0"
-      data-color-plate="transparent"
-      data-color-bar="rgba(255,255,255,.12)"
-  ></canvas>
-    <!-- <p id="lightLabel" style="text-align:center;font-size:1.2rem;font-weight:bold"></p> -->
+  <div class="section">
+    <h3>Thresholds</h3>
+    <p class="hint">LOW: dry threshold. HIGH: wet threshold. MAXMS: max watering per cycle (ms).</p>
+    <div class="actions">
+      <label class="small">LOW</label>
+      <input id="low" class="num" type="number" value="2800" min="100" max="4095">
+      <button class="action" data-cmd="SET LOW" onclick="sendCmd(this,'SET LOW '+document.getElementById('low').value)">Set LOW</button>
+    </div>
+    <div class="actions">
+      <label class="small">HIGH</label>
+      <input id="high" class="num" type="number" value="2200" min="50" max="4094">
+      <button class="action" data-cmd="SET HIGH" onclick="sendCmd(this,'SET HIGH '+document.getElementById('high').value)">Set HIGH</button>
+    </div>
+    <div class="actions">
+      <label class="small">MAXMS</label>
+      <input id="maxms" class="num" type="number" value="30000" min="500" max="600000">
+      <button class="action" data-cmd="SET MAXMS" onclick="sendCmd(this,'SET MAXMS '+document.getElementById('maxms').value)">Set MAXMS</button>
+    </div>
   </div>
-  </div>
- </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-gauges/gauge.min.js"></script>
-
-
 <script>
+/* --- navigation --- */
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* --- MQTT config --- */
 const MQTT_HOST="4629ff2d3b384c748f95b499f10e4f5b.s1.eu.hivemq.cloud";
-const MQTT_USER="hivemq.webclient.1755195003530"; // read+write restricted
-const MQTT_PASS="8354ECQbTRgAeafh:%!$"; 
+const MQTT_USER="hivemq.webclient.1755195003530";
+const MQTT_PASS="8354ECQbTRgAeafh:%!$";
 const TOPIC_SENS="plantpot/sensors";
 const TOPIC_PUMP="plantpot/pump";
-const TOPIC_ACK = "plantpot/pump/ack";
-const TOPIC_STATUS = "plantpot/status";
-const TOPIC_CFG  = "plantpot/cfg";
+const TOPIC_ACK ="plantpot/pump/ack";
+const TOPIC_STATUS="plantpot/status";
+const TOPIC_CFG ="plantpot/cfg";
 
-// const TOPIC_PUMP_ACK = "plantpot/hivemq.webclient.1755195003530/pump/ack"
-
+/* --- helpers --- */
 function lightLabelToPercent(lbl){
   if (!lbl) return null;
   lbl = String(lbl).toLowerCase();
@@ -251,253 +166,146 @@ function lightLabelToPercent(lbl){
   if (lbl.includes("dark"))        return 10;
   return null;
 }
-
 async function enableNotifs(btn){
   if(!("Notification" in window)) { alert("Notifications not supported"); flashError(btn); return; }
   const perm = await Notification.requestPermission();
   if (perm === "granted") { new Notification("Enabled", { body:"You will get alerts.", silent:true }); flashSuccess(btn); }
   else { flashError(btn); }
 }
-
 function notify(title, body){
-  if (!("Notification" in window)) { console.log("No Notification API"); return; }
-  if (Notification.permission !== "granted") { console.log("Permission:", Notification.permission); return; }
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
   new Notification(title, { body });
 }
+const _last={}; function shouldNotify(key,ms=3000){const now=Date.now(); if(_last[key]&&now-_last[key]<ms) return false; _last[key]=now; return true;}
+function flashSuccess(btn){ if(!btn) return; btn.classList.add('success'); setTimeout(()=>btn.classList.remove('success'),800); }
+function flashError(btn){ if(!btn) return; btn.classList.add('error'); setTimeout(()=>btn.classList.remove('error'),800); }
 
-// simple throttle so you don’t get spammed
-const _last = {};
-function shouldNotify(key, ms=3000){
-  const now = Date.now();
-  if (_last[key] && now - _last[key] < ms) return false;
-  _last[key] = now; return true;
-}
-
-function flashSuccess(btn){ if(!btn) return; btn.classList.add('success'); setTimeout(()=>btn.classList.remove('success'), 800); }
-function flashError(btn){ if(!btn) return; btn.classList.add('error'); setTimeout(()=>btn.classList.remove('error'), 800); }
-
-
-const csvRows = [["ts","temp_c","humidity","soil_pct","light_pct","moistureValue"]];
-function logRow(d){
-  const ts = new Date().toISOString();
-  csvRows.push([ts, d.temp_c ?? "", d.humidity ?? "", d.soil_pct ?? "", d.light_pct ?? "", d.moistureValue ?? ""]);
-}
-
+/* --- CSV log --- */
+const csvRows=[["ts","temp_c","humidity","soil_pct","light_pct","moistureValue"]];
+function logRow(d){ const ts=new Date().toISOString(); csvRows.push([ts,d.temp_c??"",d.humidity??"",d.soil_pct??"",d.light_pct??"",d.moistureValue??""]); }
 function downloadCSV(btn){
-  const csv = csvRows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "plantpot_log.csv"; a.click();
-  URL.revokeObjectURL(url);
-  flashSuccess(btn);
+  const csv=csvRows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="plantpot_log.csv"; a.click(); URL.revokeObjectURL(url); flashSuccess(btn);
 }
 
-let pumpTimer=null, pumpUntil=0, pumpMs=0;
-
-function parseDurationMs(cmd){
-  let ms = 5000;
-  const m = String(cmd).match(/^ON\s+(\d+)/i);
-  if (m) ms = Math.max(500, Math.min(600000, parseInt(m[1],10)*1000));
-  return ms;
-}
-function startCountdown(btn, ms){
-  clearInterval(pumpTimer);
-  pumpMs = ms; pumpUntil = Date.now() + ms;
-  btn.classList.add('active');
-  btn.disabled = true;
-  pumpTimer = setInterval(()=>{
-    const left = Math.max(0, pumpUntil - Date.now());
-    const pct  = 100 - Math.round((left / pumpMs) * 100);
-    btn.style.setProperty('--prog', pct + '%');
-    btn.dataset.countdown = Math.ceil(left/1000) + 's';
-    if (left <= 0) stopCountdown(btn);
-  }, 200);
+/* --- pump controls --- */
+let pumpTimer=null,pumpUntil=0,pumpMs=0;
+function parseDurationMs(cmd){ let ms=5000; const m=String(cmd).match(/^ON\s+(\d+)/i); if(m) ms=Math.max(500,Math.min(600000,parseInt(m[1],10)*1000)); return ms; }
+function startCountdown(btn,ms){
+  clearInterval(pumpTimer); pumpMs=ms; pumpUntil=Date.now()+ms; btn.classList.add('active'); btn.disabled=true;
+  pumpTimer=setInterval(()=>{ const left=Math.max(0,pumpUntil-Date.now()); const pct=100-Math.round((left/pumpMs)*100);
+    btn.style.setProperty('--prog',pct+'%'); btn.dataset.countdown=Math.ceil(left/1000)+'s'; if(left<=0) stopCountdown(btn); },200);
 }
 function stopCountdown(btn){
-  clearInterval(pumpTimer); pumpTimer=null; pumpUntil=0; pumpMs=0;
-  if (!btn) return;
-  btn.classList.remove('active','pending','success','error');
-  btn.disabled = false;
-  btn.style.removeProperty('--prog');
-  btn.removeAttribute('data-countdown');
+  clearInterval(pumpTimer); pumpTimer=null; pumpUntil=0; pumpMs=0; if(!btn) return;
+  btn.classList.remove('active','pending','success','error'); btn.disabled=false; btn.style.removeProperty('--prog'); btn.removeAttribute('data-countdown');
 }
-
-function pump(btn, cmd){
+function pump(btn,cmd){
   document.querySelectorAll('.actions .action').forEach(b=>b.classList.remove('success','error'));
-  if (btn && btn.classList) btn.classList.add('pending');
-
-  // start countdown immediately for ON; ACK will just confirm
-  const btnOn = document.querySelector('.actions .action[data-cmd="ON"]');
-  if (/^ON/i.test(cmd) && btnOn){
-    const ms = parseDurationMs(cmd);
-    startCountdown(btnOn, ms);
-  }
-  client.publish(TOPIC_PUMP, cmd);
+  if(btn&&btn.classList) btn.classList.add('pending');
+  const btnOn=document.querySelector('.actions .action[data-cmd="ON"]');
+  if(/^ON/i.test(cmd)&&btnOn){ const ms=parseDurationMs(cmd); startCountdown(btnOn,ms); }
+  client.publish(TOPIC_PUMP,cmd);
 }
-
-function sendCmd(btn, cmd){
+function sendCmd(btn,cmd){
   document.querySelectorAll('.actions .action').forEach(b=>b.classList.remove('success','error'));
-  if (btn && btn.classList) btn.classList.add('pending');
-  client.publish(TOPIC_PUMP, cmd);
+  if(btn&&btn.classList) btn.classList.add('pending');
+  client.publish(TOPIC_PUMP,cmd);
 }
 
-const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{
-  username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000
-});
-
-client.on("connect", ()=>{
-  client.subscribe([TOPIC_SENS, TOPIC_STATUS, TOPIC_ACK, TOPIC_CFG, "plantpot/diag"]);
-});
-
+/* --- MQTT --- */
+const client=mqtt.connect(`wss://${MQTT_HOST}:8884/mqtt`,{username:MQTT_USER,password:MQTT_PASS,clean:true,reconnectPeriod:2000});
+client.on("connect",()=>{ client.subscribe([TOPIC_SENS,TOPIC_STATUS,TOPIC_ACK,TOPIC_CFG,"plantpot/diag"]); });
 
 client.on("message",(t,m)=>{
-
-  if (t === TOPIC_CFG) {
-    let c; try { c = JSON.parse(m.toString()); } catch { c = {}; }
-    if (Number.isFinite(c.soilLow))  document.getElementById('low').value   = c.soilLow;
-    if (Number.isFinite(c.soilHigh)) document.getElementById('high').value  = c.soilHigh;
-    if (Number.isFinite(c.max_ms))   document.getElementById('maxms').value = c.max_ms;
-    // визуален статус за AUTO
-    const autoOnBtn  = document.querySelector('.actions .action[data-cmd="AUTO ON"]');
-    const autoOffBtn = document.querySelector('.actions .action[data-cmd="AUTO OFF"]');
-    if (autoOnBtn && autoOffBtn) {
-      const isOn = !!c.auto;
-      autoOnBtn.classList.toggle('active', isOn);
-      autoOffBtn.classList.toggle('active', !isOn);
-    }
+  if(t===TOPIC_CFG){
+    let c; try{c=JSON.parse(m.toString());}catch{c={};}
+    if(Number.isFinite(c.soilLow))  document.getElementById('low').value=c.soilLow;
+    if(Number.isFinite(c.soilHigh)) document.getElementById('high').value=c.soilHigh;
+    if(Number.isFinite(c.max_ms))   document.getElementById('maxms').value=c.max_ms;
+    const on=document.querySelector('.action[data-cmd="AUTO ON"]');
+    const off=document.querySelector('.action[data-cmd="AUTO OFF"]');
+    if(on&&off){ const isOn=!!c.auto; on.classList.toggle('active',isOn); off.classList.toggle('active',!isOn); }
     return;
   }
 
-  if (t === "plantpot/diag") {
-    let d; try { d = JSON.parse(m.toString()); } catch { d = null; }
-    const dot = document.getElementById("statusDot");
-    if (dot) {
-      const ok = d && d.mqtt_ok===1 && d.wifi_ok===1;
-      dot.textContent = ok ? "ON" : "OFF";
-      dot.style.background = ok ? "#22c55e" : "#ef4444";
-    }
+  if(t==="plantpot/diag"){
+    let d; try{d=JSON.parse(m.toString());}catch{d=null;}
+    const dot=document.getElementById("statusDot");
+    if(dot){ const ok=d&&d.mqtt_ok===1&&d.wifi_ok===1; dot.textContent=ok?"ON":"OFF"; dot.style.background=ok?"#22c55e":"#ef4444"; }
     return;
   }
 
-  if (t === "plantpot/diag") {
-    try { console.log("diag:", JSON.parse(m.toString())); }
-    catch { console.log("diag:", m.toString()); }
-    // тук по-късно можем да покажем статус в UI
+  if(t===TOPIC_ACK){
+    let a; try{a=JSON.parse(m.toString());}catch{a={cmd:m.toString(),result:"ok"};}
+    const U=String(a.cmd||"").toUpperCase();
+    document.querySelectorAll('.actions .action.pending').forEach(b=>b.classList.remove('pending'));
+    let sel=null;
+    if(U.startsWith("ON")) sel='.action[data-cmd="ON"]';
+    else if(U==="OFF"||U==="AUTO_OFF") sel='.action[data-cmd="OFF"]';
+    else if(U==="AUTO ON") sel='.action[data-cmd="AUTO ON"]';
+    else if(U==="AUTO OFF") sel='.action[data-cmd="AUTO OFF"]';
+    else if(U.startsWith("SET LOW")) sel='.action[data-cmd="SET LOW"]';
+    else if(U.startsWith("SET HIGH")) sel='.action[data-cmd="SET HIGH"]';
+    else if(U.startsWith("SET MAXMS")) sel='.action[data-cmd="SET MAXMS"]';
+    else if(U==="STATUS") sel='.action[data-cmd="STATUS"]';
+    const target=sel?document.querySelector(sel):null;
+    if(target){ target.classList.add(a.result==="ok"?"success":"error"); setTimeout(()=>target.classList.remove('success','error'),800); }
+    const btnOn=document.querySelector('.action[data-cmd="ON"]');
+    if(btnOn&&(U==="OFF"||U==="AUTO_OFF")) stopCountdown(btnOn);
     return;
   }
 
-  if (t === TOPIC_ACK){
-  let a; try { a = JSON.parse(m.toString()); } catch { a = { cmd: m.toString(), result: "ok" }; }
-  const U = String(a.cmd||"").toUpperCase();
+  let d; try{d=JSON.parse(m.toString());}catch{return;}
+  if(t===TOPIC_SENS) logRow(d);
+  if(t===TOPIC_STATUS){ notify("Status", m.toString()); return; }
 
-  // махни pending от всички бутони
-  document.querySelectorAll('.actions .action.pending').forEach(b=>b.classList.remove('pending'));
-
-  // избери бутон според командата
-  let sel = null;
-  if (U.startsWith("ON")) sel = '.actions .action[data-cmd="ON"]';
-  else if (U==="OFF" || U==="AUTO_OFF") sel = '.actions .action[data-cmd="OFF"]';
-  else if (U==="AUTO ON")  sel = '.actions .action[data-cmd="AUTO ON"]';
-  else if (U==="AUTO OFF") sel = '.actions .action[data-cmd="AUTO OFF"]';
-  else if (U.startsWith("SET LOW"))   sel = '.actions .action[data-cmd="SET LOW"]';
-  else if (U.startsWith("SET HIGH"))  sel = '.actions .action[data-cmd="SET HIGH"]';
-  else if (U.startsWith("SET MAXMS")) sel = '.actions .action[data-cmd="SET MAXMS"]';
-  else if (U==="STATUS") sel = '.actions .action[data-cmd="STATUS"]';
-
-  const target = sel ? document.querySelector(sel) : null;
-  if (target){
-    target.classList.add(a.result==="ok" ? "success" : "error");
-    setTimeout(()=>target.classList.remove('success','error'), 800);
-  }
-
-  // ако получим AUTO_OFF от ESP, спри визуалния countdown на ON бутона
-  const btnOn  = document.querySelector('.actions .action[data-cmd="ON"]');
-  if (btnOn && (U==="OFF" || U==="AUTO_OFF")) stopCountdown(btnOn);
-  return;
-}
-
-  let d;
-  try { d = JSON.parse(m.toString()); } catch { return; }
-
-    if (t === TOPIC_SENS) logRow(d);
-
-    if (t === TOPIC_STATUS) {
-    console.log("status:", m.toString());
-    notify("Статус", m.toString()); // Notifications API (Application Programming Interface)
-    return;
-  }
-   
-  // --- LIGHT update ---
-  const gLight = document.gauges?.get('lightGauge');
-  if (gLight){
-    let pct = null;
-
-    // 1) if you publish label strings:
-    pct = lightLabelToPercent(d.lightValue);
-
-    // 2) else if you publish RAW ADC (0..4095, higher = darker in your thresholds):
-    if (pct==null && Number.isFinite(Number(d.light_raw||d.lightValue))){
-      const raw = Number(d.light_raw||d.lightValue);
-      const clipped = Math.max(0, Math.min(4095, raw));
-      pct = Math.round(100 - (clipped/4095)*100); // invert so brighter => higher %
+  const gLight=document.gauges?.get('lightGauge');
+  if(gLight){
+    let pct=null;
+    pct=lightLabelToPercent(d.lightValue);
+    if(pct==null && Number.isFinite(Number(d.light_raw||d.lightValue))){
+      const raw=Number(d.light_raw||d.lightValue);
+      const clipped=Math.max(0,Math.min(4095,raw));
+      pct=Math.round(100-(clipped/4095)*100);
     }
-
-    if (pct != null) {
-    gLight.value = pct;
-    gLight.update({ units: d.lightValue ?? "% Light" });
-    }
+    if(pct!=null){ gLight.value=pct; gLight.update({units:d.lightValue??"% Light"}); }
   }
 
-
-  // let d=JSON.parse(m.toString());
-  document.getElementById("temp").textContent = (d.temp_c ?? "--");
+  document.getElementById("temp").textContent=(d.temp_c??"--");
   document.getElementById("hum").textContent=d.humidity??"--";
   document.getElementById("soil").textContent=d.moistureValue??"--";
   document.getElementById("light").textContent=d.lightValue??"--";
-  // document.getElementById("lightLabel").textContent = d.lightValue ?? "--";
-  const ll = document.getElementById("lightLabel");
-  if (ll) ll.textContent = d.lightValue ?? "--";
-  
-    const gTemp = document.gauges?.get('tempGauge');
-  if (gTemp && Number.isFinite(Number(d.temp_c))) {
-    gTemp.value = Number(d.temp_c);
-    gTemp.update({ units: d.temp_c ? d.temp_c + " °C" : "°C" });
+
+  const gTemp=document.gauges?.get('tempGauge');
+  if(gTemp && Number.isFinite(Number(d.temp_c))){ gTemp.value=Number(d.temp_c); gTemp.update({units:d.temp_c?d.temp_c+" °C":"°C"}); }
+
+  const gSoil=document.gauges?.get('soilGauge');
+  if(gSoil){
+    let pct=Number.isFinite(Number(d.soil_pct))?Number(d.soil_pct):null;
+    if(pct==null){
+      if(d.moistureValue==="Very Wet") pct=100;
+      else if(d.moistureValue==="Wet") pct=80;
+      else if(d.moistureValue==="Moist") pct=60;
+      else if(d.moistureValue==="Dry") pct=40;
+      else if(d.moistureValue==="Very Dry") pct=20;
+    }
+    if(pct!=null) gSoil.value=pct;
+    gSoil.update({units:d.moistureValue??"% Soil moisture"});
   }
 
-  const gSoil = document.gauges?.get('soilGauge');
-if (gSoil) {
-  // numeric percent if you send it; else map from text
-  let pct = Number.isFinite(Number(d.soil_pct)) ? Number(d.soil_pct) : null;
-  if (pct == null) {
-    if (d.moistureValue === "Very Wet") pct = 100;
-    else if (d.moistureValue === "Wet") pct = 80;
-    else if (d.moistureValue === "Moist") pct = 60;
-    else if (d.moistureValue === "Dry") pct = 40;
-    else if (d.moistureValue === "Very Dry") pct = 20;
-  }
-  if (pct != null) gSoil.value = pct;
-
-  // dynamic units show the label text
-  gSoil.update({ units: d.moistureValue ?? "% Soil moisture" });
-}
-  console.log("soil:", d.moistureValue, "soil_pct:", d.soil_pct, "soil_raw:", d.soil_raw ?? d.soil ?? d.soil_adc);
-
-  const mv = String(d.moistureValue || "").toLowerCase();
-  const dryLabel = mv.includes("dry");                 // matches "dry" and "very dry"
-
-  const pct = Number(d.soil_pct);
-  const dryPct = Number.isFinite(pct) && pct <= 25;    // loosen threshold
-
-  const raw = Number(d.soil_raw ?? d.soil ?? d.soil_adc);
-  const dryRaw = Number.isFinite(raw) && raw >= 3000;  // adjust to your mapping
-
-  if ((dryLabel || dryPct || dryRaw) && shouldNotify("dry")) {
-    notify("Soil is dry", d.moistureValue ?? (Number.isFinite(pct) ? `${pct}%` : `raw ${raw}`));
-  }
-
+  const mv=String(d.moistureValue||"").toLowerCase();
+  const dryLabel=mv.includes("dry");
+  const pct2=Number(d.soil_pct);
+  const dryPct=Number.isFinite(pct2)&&pct2<=25;
+  const raw=Number(d.soil_raw??d.soil??d.soil_adc);
+  const dryRaw=Number.isFinite(raw)&&raw>=3000;
+  if((dryLabel||dryPct||dryRaw)&&shouldNotify("dry")) notify("Soil is dry", d.moistureValue??(Number.isFinite(pct2)?`${pct2}%`:`raw ${raw}`));
 });
 
+/* --- connect gauged lib --- */
 </script>
 </body>
 </html>
